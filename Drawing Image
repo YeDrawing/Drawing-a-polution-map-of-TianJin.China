@@ -1,0 +1,144 @@
+I=imread('TianJin_Small_Map_Change_1.jpg');
+J=I;
+%imshow(I)
+%hold on;
+[rows, cols, ~] = size(J);
+x = [532
+    359
+784
+885
+58
+924
+591
+851
+745
+451
+681
+1100
+949
+801
+349
+614
+];
+
+
+y = [555
+    246
+697
+538
+525
+1099
+249
+231
+37
+818
+910
+794
+317
+490
+561
+482
+];
+
+ 
+ v_1 = [76;64;47;64;44;59;80;49;54;52;43;68;42;70;51];
+ v_2 = xlsread('value_change.xlsx','sheet1','C1:C15'); %AQI
+ v_3 = xlsread('value_change.xlsx','sheet1','F1:F15');%SO2
+ v_4 = xlsread('value_change.xlsx','sheet1','H1:H15');%CO
+ v_5 = xlsread('value_change.xlsx','sheet1','I1:I15');%O3
+ y = rows-y;
+ v_6 = [23;27;20;21;19;26;24;24;19;23;25;21;18;19;24;18];%温度
+ v_7 = [30;29;35;21.8;22.5;24.4;22.8;25.4;30.5;28.5;31.1;29.5;27.3;25.1;29.9;32.4];%湿度
+ xi = 1 : cols;
+ yi = 1 : rows;
+ [xi, yi] = meshgrid(xi, yi);
+ v_1i = griddata(x, y, v_1, xi, yi, 'v4');
+ v_2i = griddata(x, y, v_2, xi, yi, 'v4');
+ v_2i = v_2i/max(max(v_2i));
+ v_3i = griddata(x, y, v_3, xi, yi, 'v4');
+ v_3i = v_2i/max(max(v_3i));
+ v_4i = griddata(x, y, v_4, xi, yi, 'v4');
+ v_4i = v_4i/max(max(v_4i));
+ v_5i = griddata(x, y, v_5, xi, yi, 'v4');
+ v_5i = v_5i/max(max(v_5i));
+ v_6i = griddata(x, y, v_6, xi, yi, 'v4');
+ v_7i = griddata(x, y, v_7, xi, yi, 'v4');
+ vi = v_2i*0.65+v_3i*0.676+v_4i*0.668+v_5i*0.637; %污染综合情况核心算法%
+ ui=vi;
+ ui(ui<30) = 30;
+
+
+
+A=zeros(cols,rows,5);
+ long_stan=117.145;
+ lant_stan=39.1654;
+long_=(117.237-117.145)/(x(2)-x(1));
+lant_=(39.1654-39.1082)/(y(1)-y(2));
+
+x_stan = [359, 784, 885, 58, 949, 801, 349];
+y_stan = [246, 697, 538, 525, 317, 490, 561];
+long_stan = [117.210,117.145, 117.237, 117.202, 117.1837, 117.1589, 117.1941, 117.2099];
+lant_stan = [39.137,39.1654, 39.1082, 39.0927, 39.2133, 39.0845, 39.1067, 39.16969];
+ lont = griddata(x_stan,y_stan, long_stan, xi, yi, 'v4');
+ lant = griddata(x_stan,y_stan, lant_stan, xi, yi, 'v4');
+
+
+l = 1:cols;
+m = 1:rows;
+% A(:,:,4) = lont_i(:);
+% A(:,:,5) = lant_i(:);
+A(:,:,1) = I(:,:,1)';
+A(:,:,2) = I(:,:,2)';
+A(:,:,3) = I(:,:,3)';
+
+long_x_2017=xlsread('4号车 158.xlsx','2017','c2:c33288');    %26315是xlsx的数据量 根据不同车辆会更改
+lant_y_2017=xlsread('4号车 158.xlsx','2017','d2:d33288');
+long_x_2018=xlsread('4号车 158.xlsx','2018','c2:c22621');    %41703是xlsx的数据量 根据不同车辆会更改
+lant_y_2018=xlsread('4号车 158.xlsx','2018','d2:d22621');
+size_x_2017=size(long_x_2017);
+size_x_2018=size(long_x_2018);
+pixel_journey_2017=zeros(33288,2);    %26315是xlsx的数据量 根据不同车辆会更改
+pixel_journey_2018=zeros(22621,2);    %41703是xlsx的数据量 根据不同车辆会更改
+
+zoom = 1;      %缩放比例
+for pixel= 1:size_x_2017
+    pixel_journey_2017(pixel,1)=round((long_x_2017(pixel)-long_stan(1))/long_/zoom+x(1));
+    pixel_journey_2017(pixel,2)=round(-(lant_y_2017(pixel)-lant_stan(1))/lant_/zoom+y(1));
+end
+for pixel= 1:size_x_2018
+    pixel_journey_2018(pixel,1)=round((long_x_2018(pixel)-long_stan(1))/long_/zoom+x(1));
+    pixel_journey_2018(pixel,2)=round(-(lant_y_2018(pixel)-lant_stan(1))/lant_/zoom+y(1));
+end
+
+W=zeros(1064,1111,3);
+pixel_change_2017=pixel_journey_2017;
+pixel_change_2018=pixel_journey_2018;
+
+for point=1:size_x_2017
+    if (pixel_change_2017(point,1)<2 || pixel_change_2017(point,1)>1064 || pixel_change_2017(point,2)<2 || pixel_change_2017(point,2)>1112)
+        pixel_change_2017(point,2) = x(1);
+        pixel_change_2017(point,1) = y(1); 
+    end
+        for i=0:1
+            for j=0:1
+                W(pixel_change_2017(point,1)+i,pixel_change_2017(point,2)+j,1)=255;
+                W(pixel_change_2017(point,1)+i,pixel_change_2017(point,2)+j,2)=255;
+                W(pixel_change_2017(point,1)+i,pixel_change_2017(point,2)+j,3)=255;
+            end
+        end
+end
+
+for point=1:size_x_2018
+     if (pixel_change_2018(point,1)<2 || pixel_change_2018(point,1)>1064 || pixel_change_2018(point,2)<2 || pixel_change_2018(point,2)>1112)
+        pixel_change_2018(point,2) = x(1);
+        pixel_change_2018(point,1) = y(1); 
+    end
+        for i=0:1
+            for j=0:1
+                W(pixel_change_2018(point,1)+i,pixel_change_2018(point,2)+j,1)=255;
+                W(pixel_change_2018(point,1)+i,pixel_change_2018(point,2)+j,2)=255;
+                W(pixel_change_2018(point,1)+i,pixel_change_2018(point,2)+j,3)=255;
+            end
+        end
+end  
+ imwrite(W,'test.jpg');
